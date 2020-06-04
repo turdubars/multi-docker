@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t turdubars/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true turdubars/react-test npm test
+
+after_success:
+  - docker build -t turdubars/multi-client ./client
+  - docker build -t turdubars/multi-nginx ./nginx
+  - docker build -t turdubars/multi-server ./server
+  - docker build -t turdubars/multi-worker ./worker
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Take built images and push them to the docker hub
+  - docker push turdubars/multi-client
+  - docker push turdubars/multi-nginx
+  - docker push turdubars/multi-server
+  - docker push turdubars/multi-worker
